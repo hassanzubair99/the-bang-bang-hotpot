@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ScrollVelocity } from './components/ScrollVelocity';
@@ -202,12 +202,19 @@ const Footer = () => {
 };
 
 export default function App() {
+  const [showIntro, setShowIntro] = useState(true);
   const [totalQuantity, setTotalQuantity] = useState(0);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [activeReviewItem, setActiveReviewItem] = useState<string | null>(null);
   const [deliveryDetails, setDeliveryDetails] = useState({ address: '', phone: '' });
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const containerRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowIntro(false), 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const updateOrder = (delta: number) => {
     setTotalQuantity((prev) => Math.max(0, prev + delta));
@@ -222,6 +229,23 @@ export default function App() {
 
   const itemContainerClass = "flex flex-col sm:flex-row items-center gap-6 transition-transform duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] p-4 rounded-xl flex-wrap";
   
+  if (showIntro) return (
+    <motion.div
+      initial={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[2000] bg-red-600 flex items-center justify-center p-4 text-center"
+    >
+      <motion.h1 
+        className="text-6xl md:text-9xl font-display uppercase tracking-tighter text-black"
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 1 }}
+      >
+        BANG BANG <br/> HOTPOT
+      </motion.h1>
+    </motion.div>
+  );
+
   return (
     <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden">
       <nav className="bg-red-600 flex items-center justify-between px-8 py-4 text-black sticky top-0 z-50">
@@ -230,6 +254,11 @@ export default function App() {
           <span className="text-black">HOTPOT</span>
         </div>
         
+        {/* Mobile Menu Trigger */}
+        <button className="md:hidden" onClick={() => setIsMenuOpen(true)}>
+          <Menu size={28} />
+        </button>
+
         {/* Desktop Links */}
         <div className="hidden md:flex gap-8 uppercase font-serif text-lg font-bold mr-[-12px]">
           <a href="#broth" className="hover:underline">BROTH</a>
@@ -237,11 +266,25 @@ export default function App() {
           <a href="#meat" className="hover:underline">MEAT</a>
           <a href="#seafood" className="hover:underline">SEAFOOD</a>
         </div>
-
-        {/* Desktop Menu */}
-        <div className="hidden md:block">
-        </div>
       </nav>
+      
+      {/* Mobile Drawer */}
+      <motion.div
+        initial={{ x: '100%' }}
+        animate={{ x: isMenuOpen ? '0%' : '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className="fixed inset-0 z-[1000] bg-red-600 p-8 flex flex-col gap-8 md:hidden"
+      >
+        <button className="self-end" onClick={() => setIsMenuOpen(false)}>
+          <X size={36} />
+        </button>
+        <div className="flex flex-col gap-6 uppercase font-serif text-3xl font-bold text-black items-center mt-12">
+           <a href="#broth" onClick={() => setIsMenuOpen(false)} className="hover:underline">BROTH</a>
+           <a href="#noodles" onClick={() => setIsMenuOpen(false)} className="hover:underline">NOODLES</a>
+           <a href="#meat" onClick={() => setIsMenuOpen(false)} className="hover:underline">MEAT</a>
+           <a href="#seafood" onClick={() => setIsMenuOpen(false)} className="hover:underline">SEAFOOD</a>
+        </div>
+      </motion.div>
 
       <motion.header
         initial={{ opacity: 0, y: 30 }}
