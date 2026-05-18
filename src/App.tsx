@@ -3,8 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
+import { motion } from 'motion/react';
+import { ScrollVelocity } from './components/ScrollVelocity';
+import VariableProximity from './components/VariableProximity';
 
 const QuantityControl = ({ onUpdate }: { onUpdate: (delta: number) => void }) => {
   const [quantity, setQuantity] = useState(0);
@@ -27,9 +30,16 @@ const QuantityControl = ({ onUpdate }: { onUpdate: (delta: number) => void }) =>
 const FloatingViewOrder = ({ totalQuantity, onOpen }: { totalQuantity: number, onOpen: () => void }) => {
   if (totalQuantity === 0) return null;
   return (
-    <button onClick={onOpen} className="fixed bottom-8 right-8 bg-white text-black font-bold uppercase py-4 px-8 rounded-full shadow-2xl z-[100] animate-bounce cursor-pointer hover:bg-gray-200">
+    <motion.button 
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      whileHover={{ scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      onClick={onOpen} 
+      className="fixed bottom-8 right-8 bg-white text-black font-bold uppercase py-4 px-8 rounded-full shadow-2xl z-[100] cursor-pointer hover:bg-gray-200"
+    >
       View Order ({totalQuantity})
-    </button>
+    </motion.button>
   );
 };
 
@@ -83,7 +93,11 @@ const ReviewModal = ({ itemName, onClose }: { itemName: string, onClose: () => v
   };
 
   return (
-    <div className="fixed inset-0 z-[300] bg-black bg-opacity-95 flex items-center justify-center p-4">
+    <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed inset-0 z-[300] bg-black bg-opacity-95 flex items-center justify-center p-4"
+      >
       <div className="bg-gray-900 p-8 rounded-xl w-full max-w-lg border border-red-800 shadow-2xl">
         <h2 className="text-3xl font-bold mb-6 text-red-500 font-display">Reviews for {itemName}</h2>
         <div className="max-h-80 overflow-y-auto mb-6 pr-2 space-y-4">
@@ -122,7 +136,7 @@ const ReviewModal = ({ itemName, onClose }: { itemName: string, onClose: () => v
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -141,8 +155,15 @@ const BrothSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: num
       
       <div className="flex flex-col gap-12 w-full max-w-2xl">
         {broths.map((broth, index) => (
-          <div key={index} className={itemClass}>
-            <div className={`flex flex-col ${index === 1 ? 'order-2' : ''}`}>
+          <motion.div 
+            key={index} 
+            className={itemClass}
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <div className={`flex flex-col ${index === 1 ? 'sm:order-2' : ''}`}>
               <h3 className="text-3xl font-display uppercase tracking-tight">{broth.name}</h3>
               <p className="text-2xl font-serif">{broth.price}</p>
               <p className="text-sm text-gray-400 mb-2">{broth.description}</p>
@@ -152,18 +173,18 @@ const BrothSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: num
               </div>
             </div>
             
-            <div className={`relative flex items-center ${index === 1 ? 'order-1' : ''}`}>
-              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white">
+            <div className={`relative flex items-center justify-center ${index === 1 ? 'sm:order-1' : ''}`}>
+              <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-white flex-shrink-0">
                 <img src={broth.image} alt={broth.name} className="w-full h-full object-cover" />
               </div>
               {/* Professional connecting arrow */}
-              <svg className={`absolute top-1/2 -mt-10 ${index === 0 ? '-left-32' : '-right-32'} w-32 h-24`} viewBox="0 0 100 50" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+              <svg className={`hidden md:block absolute top-1/2 -mt-10 ${index === 0 ? '-left-32' : '-right-32'} w-32 h-24`} viewBox="0 0 100 50" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                 <path d={index === 0 ? "M 95 10 C 30 10 30 40 5 40" : "M 5 10 C 70 10 70 40 95 40"} />
                 {/* Professional arrowhead */}
                 <path d={index === 0 ? "M 5 40 L 15 30 L 15 50 Z" : "M 95 40 L 85 30 L 85 50 Z"} fill="white" />
               </svg>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>
@@ -172,20 +193,21 @@ const BrothSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: num
 
 const Footer = () => {
   return (
-    <footer className="bg-red-700 text-white p-8 border-t border-red-800 flex justify-between items-center px-16">
+    <footer className="bg-red-700 text-white p-6 border-t border-red-800 flex flex-col md:flex-row justify-between items-center px-4 md:px-16 gap-4 text-center">
       <p>&copy; {new Date().getFullYear()} The Bang Bang Hotpot. All rights reserved.</p>
-      <p className="font-display text-2xl uppercase">The Bang Bang Hotpot</p>
+      <img src="https://i.ibb.co/k2YNHxBy/Chat-GPT-Image-May-18-2026-11-43-56-PM.png" alt="Logo" className="h-16 w-16 object-contain" />
+      <p className="font-display text-2xl uppercase text-red-100">The Bang Bang Hotpot</p>
     </footer>
   );
 };
 
 export default function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [totalQuantity, setTotalQuantity] = useState(0);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [activeReviewItem, setActiveReviewItem] = useState<string | null>(null);
   const [deliveryDetails, setDeliveryDetails] = useState({ address: '', phone: '' });
+  const containerRef = useRef(null);
 
   const updateOrder = (delta: number) => {
     setTotalQuantity((prev) => Math.max(0, prev + delta));
@@ -198,44 +220,35 @@ export default function App() {
     setDeliveryDetails({ address: '', phone: '' });
   };
 
-  const itemContainerClass = "flex items-center gap-6 transition-transform duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] p-4 rounded-xl";
+  const itemContainerClass = "flex flex-col sm:flex-row items-center gap-6 transition-transform duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.2)] p-4 rounded-xl flex-wrap";
   
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div className="min-h-screen bg-black text-white font-sans overflow-x-hidden">
       <nav className="bg-red-600 flex items-center justify-between px-8 py-4 text-black sticky top-0 z-50">
         <div className="flex items-center gap-2 font-display uppercase tracking-tighter text-2xl font-bold">
-          <span>BANG BANG</span>
-          <span>HOTPOT</span>
+          <span className="text-black">BANG BANG</span>
+          <span className="text-black">HOTPOT</span>
         </div>
         
         {/* Desktop Links */}
-        <div className="hidden md:flex gap-8 uppercase font-serif text-lg font-bold">
+        <div className="hidden md:flex gap-8 uppercase font-serif text-lg font-bold mr-[-12px]">
           <a href="#broth" className="hover:underline">BROTH</a>
           <a href="#noodles" className="hover:underline">NOODLES</a>
           <a href="#meat" className="hover:underline">MEAT</a>
           <a href="#seafood" className="hover:underline">SEAFOOD</a>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button 
-          className="md:hidden"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X size={32} /> : <Menu size={32} />}
-        </button>
+        {/* Desktop Menu */}
+        <div className="hidden md:block">
+        </div>
       </nav>
 
-      {/* Mobile/Tablet Side Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-red-600 z-40 flex flex-col items-center justify-center gap-8 uppercase font-display text-4xl text-black font-bold pt-20">
-          <a href="#broth" className="hover:underline" onClick={() => setIsMenuOpen(false)}>BROTH</a>
-          <a href="#noodles" className="hover:underline" onClick={() => setIsMenuOpen(false)}>NOODLES</a>
-          <a href="#meat" className="hover:underline" onClick={() => setIsMenuOpen(false)}>MEAT</a>
-          <a href="#seafood" className="hover:underline" onClick={() => setIsMenuOpen(false)}>SEAFOOD</a>
-        </div>
-      )}
-
-      <header className="flex flex-col items-center p-8">
+      <motion.header
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        className="flex flex-col items-center p-8"
+      >
         <div className="flex flex-wrap items-center justify-center gap-4">
           <span className="text-3xl font-bold -rotate-12 italic text-red-600">THE</span>
           <h1 className="text-4xl md:text-8xl font-display uppercase tracking-tighter text-red-600">
@@ -257,14 +270,18 @@ export default function App() {
         <h2 className="text-2xl md:text-4xl font-display uppercase text-red-600 mb-6 text-center">
           WELCOME TO BANG BANG HOTPOT
         </h2>
-        <p className="max-w-3xl text-center text-lg md:text-xl font-medium leading-relaxed">
-          DIVE INTO AN AUTHENTIC CHINESE HOTPOT EXPERIENCE WHERE RICH,
-          SIMMERING BROTHS MEET FRESH, PREMIUM INGREDIENTS. WHETHER YOU
-          LOVE THE FIERY KICK OF A TRADITIONAL SICHUAN PEPPER BROTH OR
-          PREFER A COMFORTING, SLOW-COOKED HERBAL SOUP, WE BRING THE
-          TRUE TASTE OF REGIONAL CHINESE CUISINE STRAIGHT TO YOUR TABLE.
-        </p>
-      </header>
+        <div ref={containerRef} className="max-w-3xl text-center text-lg md:text-xl font-medium leading-relaxed drop-shadow-lg transition-transform duration-500 hover:scale-[1.02] cursor-default" style={{position: 'relative'}}>
+          <VariableProximity
+            label="DIVE INTO AN AUTHENTIC CHINESE HOTPOT EXPERIENCE WHERE RICH, SIMMERING BROTHS MEET FRESH, PREMIUM INGREDIENTS. WHETHER YOU LOVE THE FIERY KICK OF A TRADITIONAL SICHUAN PEPPER BROTH OR PREFER A COMFORTING, SLOW-COOKED HERBAL SOUP, WE BRING THE TRUE TASTE OF REGIONAL CHINESE CUISINE STRAIGHT TO YOUR TABLE."
+            className="variable-proximity-demo"
+            fromFontVariationSettings="'wght' 400, 'opsz' 9"
+            toFontVariationSettings="'wght' 1000, 'opsz' 40"
+            containerRef={containerRef}
+            radius={100}
+            falloff="linear"
+          />
+        </div>
+      </motion.header>
 
       <div id="broth">
         <BrothSection onUpdateOrder={updateOrder} itemClass={itemContainerClass} />
@@ -281,6 +298,11 @@ export default function App() {
         <SeafoodSection onUpdateOrder={updateOrder} itemClass={itemContainerClass} />
       </div>
       <LocationSection />
+      <ScrollVelocity
+        texts={['BANG BANG HOTPOT', 'FRESH INGREDIENTS', 'AUTHENTIC TASTE']}
+        velocity={100}
+        className="font-display text-3xl md:text-5xl text-red-600"
+      />
       
       {isCheckingOut && (
         <div className="fixed inset-0 z-[200] bg-black bg-opacity-95 flex flex-col items-center justify-center p-8">
@@ -366,8 +388,15 @@ const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: numb
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {meats.map((meat, index) => (
-          <div key={index} className={itemClass}>
-            <img src={meat.image} alt={meat.name} className="w-32 h-32 rounded-full border-2 border-red-600 object-cover shadow-[0_0_20px_rgba(220,38,38,0.3)]" />
+          <motion.div 
+            key={index} 
+            className={itemClass}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <img src={meat.image} alt={meat.name} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-red-600 object-cover shadow-[0_0_20px_rgba(220,38,38,0.3)] flex-shrink-0" />
             <div className="flex flex-col">
               <h3 className="text-2xl font-display uppercase text-red-600 drop-shadow-[0_0_5px_rgba(220,38,38,0.5)]">{meat.name}</h3>
               <p className="text-xl font-bold">{meat.price}</p>
@@ -377,7 +406,7 @@ const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: numb
                 <button onClick={() => setActiveReviewItem(meat.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>
@@ -408,8 +437,15 @@ const SeafoodSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
             {section.items.map((item, index) => (
-              <div key={index} className={itemClass}>
-                <img src={item.image} alt={item.name} className={`w-32 h-32 rounded-full border-2 border-${section.color} object-cover shadow-[0_0_20px_rgba(74,222,128,0.3)]`} />
+              <motion.div 
+                key={index} 
+                className={itemClass}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <img src={item.image} alt={item.name} className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-${section.color} object-cover shadow-[0_0_20px_rgba(74,222,128,0.3)] flex-shrink-0`} />
                 <div className="flex flex-col">
                   <h3 className={`text-2xl font-display uppercase text-${section.color} drop-shadow-[0_0_5px_rgba(244,114,182,0.5)]`}>{item.name}</h3>
                   <p className="text-xl font-bold">{item.price}</p>
@@ -419,7 +455,7 @@ const SeafoodSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
                     <button onClick={() => setActiveReviewItem(item.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -444,8 +480,15 @@ const NoodlesSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
         {noodles.map((noodle, index) => (
-          <div key={index} className={itemClass}>
-            <img src={noodle.image} alt={noodle.name} className="w-32 h-32 rounded-full border-2 border-yellow-500 object-cover shadow-[0_0_20px_rgba(234,179,8,0.3)]" />
+          <motion.div 
+            key={index} 
+            className={itemClass}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <img src={noodle.image} alt={noodle.name} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-yellow-500 object-cover shadow-[0_0_20px_rgba(234,179,8,0.3)] flex-shrink-0" />
             <div className="flex flex-col">
               <h3 className="text-2xl font-display uppercase text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]">{noodle.name}</h3>
               <p className="text-xl font-bold">{noodle.price}</p>
@@ -455,7 +498,7 @@ const NoodlesSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
                 <button onClick={() => setActiveReviewItem(noodle.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </section>
