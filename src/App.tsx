@@ -8,14 +8,22 @@ import { Menu, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ScrollVelocity } from './components/ScrollVelocity';
 import VariableProximity from './components/VariableProximity';
+import { AmbianceSection } from './components/AmbianceSection';
 
-const QuantityControl = ({ onUpdate }: { onUpdate: (delta: number) => void }) => {
+type CartItem = {
+  name: string;
+  price: string;
+  image: string;
+  quantity: number;
+};
+
+const QuantityControl = ({ item, onUpdate }: { item: { name: string, price: string, image: string }, onUpdate: (item: { name: string, price: string, image: string }, delta: number) => void }) => {
   const [quantity, setQuantity] = useState(0);
 
   const handleUpdate = (delta: number) => {
     const newQty = Math.max(0, quantity + delta);
     setQuantity(newQty);
-    onUpdate(delta);
+    onUpdate(item, delta);
   };
 
   return (
@@ -73,6 +81,66 @@ const LocationSection = () => {
           />
         </div>
       </div>
+    </section>
+  );
+};
+
+const ReservationSection = () => {
+  const [status, setStatus] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    try {
+        const response = await fetch("https://api.web3forms.com/submit", {
+            method: "POST",
+            body: formData,
+        });
+        
+        if (response.ok) {
+            setStatus("success");
+            e.currentTarget.reset();
+        } else {
+            throw new Error("Form submission failed");
+        }
+    } catch (error) {
+        setStatus("error");
+    }
+  };
+
+  return (
+    <section className="bg-black text-white p-8 md:p-16 border-t border-red-800 relative">
+      <h2 className="text-4xl md:text-6xl font-display uppercase tracking-tight text-red-600 mb-8">Reserve Your Table</h2>
+      
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto bg-gray-900 p-8 rounded-xl border border-red-800 shadow-2xl">
+          <input type="hidden" name="access_key" value="966a2c6f-84ec-47e4-ab28-1170aacfc1a6" />
+          <input type="hidden" name="subject" value="New Table Reservation" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" name="name" placeholder="Name" required className="p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+              <input type="email" name="email" placeholder="Email" required className="p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+              <input type="tel" name="phone" placeholder="Phone Number" required className="p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+              <input type="number" name="guests" placeholder="Number of Guests" required className="p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+              <input type="datetime-local" name="date_time" min={new Date().toISOString().slice(0, 16)} required className="p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+          </div>
+          <textarea name="message" placeholder="Special Requests (optional)" className="w-full mt-4 p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" rows={3}></textarea>
+          
+          <button type="submit" className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded mt-8 w-full uppercase">Submit Reservation</button>
+      </form>
+
+      {/* Popup */}
+      {status === "success" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-80">
+            <div className="bg-gray-900 p-8 rounded-xl border border-red-800 shadow-2xl text-center">
+                <h3 className="text-2xl font-bold text-red-500 mb-4">Confirmed!</h3>
+                <p className="text-white mb-6">Thank you for reserving your table. We look forward to seeing you!</p>
+                <button onClick={() => setStatus(null)} className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded">Close</button>
+            </div>
+        </div>
+      )}
+      
+      {status === "error" && <p className="text-red-500 mt-4 text-center">Something went wrong. Please try again.</p>}
     </section>
   );
 };
@@ -168,7 +236,7 @@ const BrothSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: num
               <p className="text-2xl font-serif">{broth.price}</p>
               <p className="text-sm text-gray-400 mb-2">{broth.description}</p>
               <div className="flex gap-2">
-                <QuantityControl onUpdate={onUpdateOrder} />
+                <QuantityControl item={{ name: broth.name, price: broth.price, image: broth.image }} onUpdate={onUpdateOrder} />
                 <button onClick={() => setActiveReviewItem(broth.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
@@ -196,13 +264,17 @@ const Footer = () => {
     <footer className="bg-red-700 text-white p-6 border-t border-red-800 flex flex-col md:flex-row justify-between items-center px-4 md:px-16 gap-4 text-center">
       <p>&copy; {new Date().getFullYear()} The Bang Bang Hotpot. All rights reserved.</p>
       <img src="https://i.ibb.co/k2YNHxBy/Chat-GPT-Image-May-18-2026-11-43-56-PM.png" alt="Logo" className="h-16 w-16 object-contain" />
-      <p className="font-display text-2xl uppercase text-red-100">The Bang Bang Hotpot</p>
+      <div className="flex flex-col items-center">
+        <p className="font-display text-2xl uppercase text-red-100">The Bang Bang Hotpot</p>
+        <p className="text-gray-200 text-sm mt-1">made by codewithhassan</p>
+      </div>
     </footer>
   );
 };
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
+  const [order, setOrder] = useState<CartItem[]>([]);
   const [totalQuantity, setTotalQuantity] = useState(0);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
@@ -216,11 +288,23 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const updateOrder = (delta: number) => {
+  const updateOrder = (item: { name: string, price: string, image: string }, delta: number) => {
+    setOrder(prev => {
+        const existing = prev.find(i => i.name === item.name);
+        if (existing) {
+            const newQty = existing.quantity + delta;
+            if (newQty <= 0) return prev.filter(i => i.name !== item.name);
+            return prev.map(i => i.name === item.name ? { ...i, quantity: newQty } : i);
+        } else if (delta > 0) {
+            return [...prev, { ...item, quantity: delta }];
+        }
+        return prev;
+    });
     setTotalQuantity((prev) => Math.max(0, prev + delta));
   };
   
   const clearOrder = () => {
+    setOrder([]);
     setTotalQuantity(0);
     setIsCheckingOut(false);
     setIsOrderPlaced(false);
@@ -241,7 +325,7 @@ export default function App() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1 }}
       >
-        BANG BANG <br/> HOTPOT
+        THE BANG BANG <br/> HOTPOT
       </motion.h1>
     </motion.div>
   );
@@ -264,7 +348,9 @@ export default function App() {
           <a href="#broth" className="hover:underline">BROTH</a>
           <a href="#noodles" className="hover:underline">NOODLES</a>
           <a href="#meat" className="hover:underline">MEAT</a>
+          <a href="#vegetables" className="hover:underline">VEGETABLES</a>
           <a href="#seafood" className="hover:underline">SEAFOOD</a>
+
         </div>
       </nav>
       
@@ -282,7 +368,9 @@ export default function App() {
            <a href="#broth" onClick={() => setIsMenuOpen(false)} className="hover:underline">BROTH</a>
            <a href="#noodles" onClick={() => setIsMenuOpen(false)} className="hover:underline">NOODLES</a>
            <a href="#meat" onClick={() => setIsMenuOpen(false)} className="hover:underline">MEAT</a>
+           <a href="#vegetables" onClick={() => setIsMenuOpen(false)} className="hover:underline">VEGETABLES</a>
            <a href="#seafood" onClick={() => setIsMenuOpen(false)} className="hover:underline">SEAFOOD</a>
+
         </div>
       </motion.div>
 
@@ -337,10 +425,18 @@ export default function App() {
       <div id="meat">
         <MeatSection onUpdateOrder={updateOrder} itemClass={itemContainerClass} />
       </div>
+      <div id="vegetables">
+        <VegetableSection onUpdateOrder={updateOrder} itemClass={itemContainerClass} />
+      </div>
       <div id="seafood">
+
         <SeafoodSection onUpdateOrder={updateOrder} itemClass={itemContainerClass} />
       </div>
+      <div id="ambiance">
+        <AmbianceSection />
+      </div>
       <LocationSection />
+      <ReservationSection />
       <ScrollVelocity
         texts={['BANG BANG HOTPOT', 'FRESH INGREDIENTS', 'AUTHENTIC TASTE']}
         velocity={100}
@@ -348,57 +444,110 @@ export default function App() {
       />
       
       {isCheckingOut && (
-        <div className="fixed inset-0 z-[200] bg-black bg-opacity-95 flex flex-col items-center justify-center p-8">
-          {!isOrderPlaced ? (
-            <>
-              <h2 className="text-4xl font-bold mb-8 uppercase font-display text-red-600">Checkout</h2>
-              <p className="text-2xl mb-8 font-bold">Total Items: {totalQuantity}</p>
-              
-              <div className="w-full max-w-md flex flex-col gap-4 mb-8">
-                <input
-                  type="text"
-                  placeholder="Enter Delivery Address"
-                  className="p-4 bg-gray-800 rounded text-white border border-gray-600 focus:border-red-500 outline-none"
-                  value={deliveryDetails.address}
-                  onChange={(e) => setDeliveryDetails({ ...deliveryDetails, address: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Enter Phone Number"
-                  className="p-4 bg-gray-800 rounded text-white border border-gray-600 focus:border-red-500 outline-none"
-                  value={deliveryDetails.phone}
-                  onChange={(e) => setDeliveryDetails({ ...deliveryDetails, phone: e.target.value })}
-                />
+        <div className="fixed inset-0 z-[200] bg-black bg-opacity-95 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-5xl bg-gray-900 rounded-xl border border-red-800 shadow-[0_0_30px_rgba(200,0,0,0.3)] p-8 max-h-[90vh] overflow-y-auto flex flex-col md:flex-row gap-8">
+            <button
+              onClick={() => setIsCheckingOut(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl font-bold"
+            >
+              &times;
+            </button>
+            {!isOrderPlaced ? (
+              <>
+                {/* Left side: Form */}
+                <form 
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    formData.append("order_details", JSON.stringify(order.map(item => ({ name: item.name, price: item.price, quantity: item.quantity }))));
+
+                    try {
+                        const response = await fetch("https://api.web3forms.com/submit", {
+                            method: "POST",
+                            body: formData,
+                        });
+                        
+                        if (response.ok) {
+                            setIsOrderPlaced(true);
+                        } else {
+                            throw new Error("Form submission failed");
+                        }
+                    } catch (error) {
+                        alert("Something went wrong. Please try again.");
+                    }
+                  }}
+                  className="w-full md:w-1/2"
+                >
+                  <input type="hidden" name="access_key" value="344d0b0c-8b04-4cec-ae2a-9bcaa064c28c" />
+                  <input type="hidden" name="subject" value="New Order Placed" />
+                  <input type="hidden" name="total_items" value={totalQuantity} />
+                  <input type="hidden" name="total_price" value={`Rs ${order.reduce((sum, item) => sum + parseInt(item.price.replace(/\D/g, '')) * item.quantity, 0)}`} />
+                  
+                  <h2 className="text-4xl font-bold mb-8 uppercase font-display text-red-600">Checkout</h2>
+                  
+                  <div className="space-y-4">
+                    <input type="text" name="name" placeholder="Customer Name" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+                    <input type="email" name="email" placeholder="Email" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+                    <input type="tel" name="phone_number" placeholder="Phone Number" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+                    <input type="text" name="postal_code" placeholder="Postal Code" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+                    <input type="text" name="address" placeholder="Delivery Address" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+                    
+                    <textarea name="message" placeholder="Notes" className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" rows={3}></textarea>
+                    
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2">
+                        <input type="radio" name="payment_method" value="Cash on Delivery" defaultChecked className="text-red-600" />
+                        <span>Cash on Delivery</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="radio" name="payment_method" value="Online Payment" className="text-red-600" />
+                        <span>Online Payment</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded mt-8 mb-4 w-full uppercase">Complete Order</button>
+                  <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE" target="_blank" rel="noopener noreferrer" className="block text-center bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded mb-4 w-full uppercase">Contact Customer Service</a>
+                  <button type="button" className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-8 rounded mb-4 w-full uppercase" onClick={clearOrder}>Clear Order</button>
+                </form>
+
+                {/* Right side: Items */}
+                <div className="w-full md:w-1/2 border-l border-gray-700 pl-8">
+                  <h3 className="text-2xl font-bold mb-6 text-white text-display uppercase">Your Order Items</h3>
+                  {order.length === 0 ? (
+                      <p className="text-gray-400">Your cart is empty.</p>
+                  ) : (
+                      <>
+                        <div className="space-y-4 max-h-[50vh] overflow-y-auto">
+                            {order.map(item => (
+                                <div key={item.name} className="flex gap-4 items-center bg-black p-2 rounded border border-gray-800">
+                                    <img src={item.image} alt={item.name} className="w-12 h-12 rounded-full object-cover border border-gray-600" />
+                                    <div className="flex-1">
+                                        <p className="font-bold">{item.name}</p>
+                                        <p className="text-sm text-gray-400">{item.quantity} x {item.price.replace('$', 'Rs ')}</p>
+                                    </div>
+                                    <button onClick={() => updateOrder({name: item.name, price: item.price, image: item.image}, -item.quantity)} className="ml-auto text-red-500 font-bold px-2">Delete</button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-8 pt-4 border-t border-gray-700">
+                            <p className="text-2xl font-bold flex justify-between">
+                                <span>Total Price:</span>
+                                <span>Rs {order.reduce((sum, item) => sum + parseInt(item.price.replace(/\D/g, '')) * item.quantity, 0)}</span>
+                            </p>
+                        </div>
+                      </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="w-full text-center py-12">
+                <h2 className="text-4xl font-bold mb-8 uppercase font-display text-green-500">Order Confirmed!</h2>
+                <p className="mb-8 text-2xl text-white">Thank you for ordering from the Bang Bang Hotpot!</p>
+                <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded uppercase" onClick={() => { setIsCheckingOut(false); clearOrder(); }}>Close</button>
               </div>
-    
-              <button
-                onClick={() => {
-                  if (deliveryDetails.address && deliveryDetails.phone) {
-                    setIsOrderPlaced(true);
-                  } else {
-                    alert('Please enter both address and phone number.');
-                  }
-                }}
-                className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded mb-4 w-full max-w-md uppercase"
-              >
-                Complete Order
-              </button>
-              
-              <button className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-8 rounded mb-4 w-full max-w-md uppercase" onClick={clearOrder}>Clear Order</button>
-              <button className="text-gray-400 mt-8 hover:text-white" onClick={() => setIsCheckingOut(false)}>Close</button>
-            </>
-          ) : (
-            <>
-              <h2 className="text-4xl font-bold mb-8 uppercase font-display text-green-500">Order Confirmed!</h2>
-              <div className="bg-gray-800 p-6 rounded-lg w-full max-w-md mb-8">
-                 <p className="mb-2"><strong>Address:</strong> {deliveryDetails.address}</p>
-                 <p className="mb-2"><strong>Phone:</strong> {deliveryDetails.phone}</p>
-                 <p className="mb-2"><strong>Total Items:</strong> {totalQuantity}</p>
-                 <p className="font-bold text-red-500">Estimated Delivery: 30 - 45 Minutes</p>
-              </div>
-              <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded mb-4 w-full max-w-md uppercase" onClick={() => { setIsCheckingOut(false); clearOrder(); }}>Close</button>
-            </>
-          )}
+            )}
+          </div>
         </div>
       )}
       
@@ -411,6 +560,56 @@ export default function App() {
     </div>
   );
 }
+
+const VegetableSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: number) => void, itemClass: string }) => {
+  const vegetables = [
+    { name: "BROCCOLI", price: "RS 300", description: "Fresh green broccoli.", image: "https://i.pinimg.com/736x/f6/87/5d/f6875d90a4c55fc6eda0f9498f4987c8.jpg" },
+    { name: "CORN", price: "RS 500", description: "Sweet golden corn.", image: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=300&auto=format&fit=crop" },
+    { name: "BROWN MUSHROOM", price: "RS 450", description: "Earthy brown mushrooms.", image: "https://i.pinimg.com/736x/11/89/da/1189da5013944f48ecea6e9c9d134411.jpg" },
+    { name: "WHITE MUSHROOM", price: "RS 400", description: "Delicate white mushrooms.", image: "https://i.pinimg.com/736x/7d/8b/37/7d8b375c072856c1c76caf99dd351a6c.jpg" },
+    { name: "TOFU", price: "RS 300", description: "Silky soft tofu.", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=300&auto=format&fit=crop" },
+    { name: "LOTUS ROOTS", price: "RS 300", description: "Crunchy sliced lotus roots.", image: "https://i.pinimg.com/736x/48/57/12/4857125338149f9cb33a4e572b477f41.jpg" },
+    { name: "CARROT", price: "RS 200", description: "Sweet crunchy carrots.", image: "https://i.pinimg.com/736x/4a/cc/5f/4acc5f804f89cd17ef7efe9d87c2e37b.jpg" },
+    { name: "BAMBOO SHOT", price: "RS 600", description: "Tender bamboo shoots.", image: "https://i.pinimg.com/736x/b2/92/ab/b292ab3697cbd2b584580065a9a7de87.jpg" },
+    { name: "SPINACH", price: "RS 200", description: "Fresh baby spinach.", image: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=300&auto=format&fit=crop" },
+    { name: "TOMATO", price: "RS 200", description: "Juicy ripe tomatoes.", image: "https://i.pinimg.com/1200x/29/40/61/294061c8da24641b45df7c7f672faf32.jpg" },
+    { name: "LETTUCE", price: "RS 200", description: "Crisp garden lettuce.", image: "https://i.pinimg.com/736x/10/46/db/1046dbc31bd4b03d061334c7d1169e3f.jpg" },
+    { name: "SPRING ONION", price: "RS 200", description: "Fresh crisp spring onions.", image: "https://i.pinimg.com/1200x/25/92/6f/25926f35a27e346dee65e7eed79c714e.jpg" },
+  ];
+
+  return (
+    <section className="bg-black text-white p-8 md:p-16 border-t border-red-800">
+      <div className="flex items-center gap-4 mb-16 text-green-500 [text-shadow:0_0_15px_rgba(34,197,94,0.5)]">
+        <h2 className="text-6xl md:text-8xl font-display uppercase tracking-tighter">VEGETABLES</h2>
+        <span className="text-4xl md:text-6xl font-display uppercase tracking-widest">蔬菜</span>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        {vegetables.map((veg, index) => (
+          <motion.div 
+            key={index} 
+            className={itemClass}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <img src={veg.image} alt={veg.name} className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-2 border-green-500 object-cover shadow-[0_0_20px_rgba(34,197,94,0.3)] flex-shrink-0" />
+            <div className="flex flex-col">
+              <h3 className="text-2xl font-display uppercase text-green-500 drop-shadow-[0_0_5px_rgba(34,197,94,0.5)]">{veg.name}</h3>
+              <p className="text-xl font-bold">{veg.price}</p>
+              <p className="text-sm text-gray-400 mb-2">{veg.description}</p>
+              <div className="flex gap-2">
+                <QuantityControl item={{ name: veg.name, price: veg.price, image: veg.image }} onUpdate={onUpdateOrder} />
+                <button onClick={() => setActiveReviewItem(veg.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: number) => void, itemClass: string }) => {
   const meats = [
@@ -445,7 +644,7 @@ const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: numb
               <p className="text-xl font-bold">{meat.price}</p>
               <p className="text-sm text-gray-400 mb-2">{meat.description}</p>
               <div className="flex gap-2">
-                <QuantityControl onUpdate={onUpdateOrder} />
+                <QuantityControl item={{ name: meat.name, price: meat.price, image: meat.image }} onUpdate={onUpdateOrder} />
                 <button onClick={() => setActiveReviewItem(meat.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
@@ -494,7 +693,7 @@ const SeafoodSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
                   <p className="text-xl font-bold">{item.price}</p>
                   <p className="text-sm text-gray-400 mb-2">{item.description}</p>
                   <div className="flex gap-2">
-                    <QuantityControl onUpdate={onUpdateOrder} />
+                    <QuantityControl item={{ name: item.name, price: item.price, image: item.image }} onUpdate={onUpdateOrder} />
                     <button onClick={() => setActiveReviewItem(item.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
                   </div>
                 </div>
@@ -537,7 +736,7 @@ const NoodlesSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
               <p className="text-xl font-bold">{noodle.price}</p>
               <p className="text-sm text-gray-400 mb-2">{noodle.description}</p>
               <div className="flex gap-2">
-                <QuantityControl onUpdate={onUpdateOrder} />
+                <QuantityControl item={{ name: noodle.name, price: noodle.price, image: noodle.image }} onUpdate={onUpdateOrder} />
                 <button onClick={() => setActiveReviewItem(noodle.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
