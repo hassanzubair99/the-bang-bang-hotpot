@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Copy, Map } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ScrollVelocity } from './components/ScrollVelocity';
 import VariableProximity from './components/VariableProximity';
@@ -16,6 +16,7 @@ type CartItem = {
   image: string;
   quantity: number;
 };
+
 
 const QuantityControl = ({ item, onUpdate }: { item: { name: string, price: string, image: string }, onUpdate: (item: { name: string, price: string, image: string }, delta: number) => void }) => {
   const [quantity, setQuantity] = useState(0);
@@ -34,6 +35,7 @@ const QuantityControl = ({ item, onUpdate }: { item: { name: string, price: stri
     </div>
   );
 };
+
 
 const FloatingViewOrder = ({ totalQuantity, onOpen }: { totalQuantity: number, onOpen: () => void }) => {
   if (totalQuantity === 0) return null;
@@ -87,10 +89,15 @@ const LocationSection = () => {
 
 const ReservationSection = () => {
   const [status, setStatus] = useState<string | null>(null);
+  const [reservationOrderNumber, setReservationOrderNumber] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const orderNum = Math.floor(100000 + Math.random() * 900000).toString();
+    setReservationOrderNumber(orderNum);
     const formData = new FormData(e.currentTarget);
+    formData.append("order_number", orderNum);
+    
     try {
         const response = await fetch("https://api.web3forms.com/submit", {
             method: "POST",
@@ -134,7 +141,7 @@ const ReservationSection = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-80">
             <div className="bg-gray-900 p-8 rounded-xl border border-red-800 shadow-2xl text-center">
                 <h3 className="text-2xl font-bold text-red-500 mb-4">Confirmed!</h3>
-                <p className="text-white mb-6">Thank you for reserving your table. We look forward to seeing you!</p>
+                <p className="text-white mb-6">Thank you for reserving your table. Your confirmed order#<span className="font-bold text-red-400">{reservationOrderNumber}</span>. We look forward to seeing you!</p>
                 <button onClick={() => setStatus(null)} className="bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded">Close</button>
             </div>
         </div>
@@ -208,7 +215,7 @@ const ReviewModal = ({ itemName, onClose }: { itemName: string, onClose: () => v
   );
 };
 
-const BrothSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: number) => void, itemClass: string }) => {
+const BrothSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (item: { name: string, price: string, image: string }, delta: number) => void, itemClass: string }) => {
   const broths = [
     { name: "MANGOLIAN BROTH", price: "RS 500", description: "Rich and aromatic traditional Mongolian broth.", image: "https://i.ibb.co/99h8N33G/image.png" },
     { name: "CHINESE BROTH", price: "RS 500", description: "Classic Chinese herbal hotpot soup.", image: "https://i.ibb.co/7tD57vfT/image.png" },
@@ -237,7 +244,6 @@ const BrothSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: num
               <p className="text-sm text-gray-400 mb-2">{broth.description}</p>
               <div className="flex gap-2">
                 <QuantityControl item={{ name: broth.name, price: broth.price, image: broth.image }} onUpdate={onUpdateOrder} />
-                <button onClick={() => setActiveReviewItem(broth.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
             
@@ -278,10 +284,13 @@ export default function App() {
   const [totalQuantity, setTotalQuantity] = useState(0);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
+  const [checkoutOrderNumber, setCheckoutOrderNumber] = useState<string | null>(null);
   const [activeReviewItem, setActiveReviewItem] = useState<string | null>(null);
   const [deliveryDetails, setDeliveryDetails] = useState({ address: '', phone: '' });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mainTrackInputRef = useRef<HTMLInputElement>(null);
+  const confirmTrackInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowIntro(false), 3000);
@@ -437,6 +446,36 @@ export default function App() {
       </div>
       <LocationSection />
       <ReservationSection />
+      <section className="bg-black text-white p-8 md:p-16 border-t border-red-800 text-center">
+        <h2 className="text-4xl font-display uppercase tracking-tight text-red-600 mb-8">Track Your Order</h2>
+        <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
+            <input 
+              type="text" 
+              placeholder="Enter Order Number" 
+              className="p-4 bg-gray-900 rounded text-center text-white border border-gray-600 focus:border-red-500 outline-none w-full"
+              ref={mainTrackInputRef}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                    const orderNum = mainTrackInputRef.current?.value;
+                    if (orderNum) {
+                        window.open(`https://wa.me/03705965670?text=My%20order%20number%20is%20${orderNum}.%20Can%20I%20get%20how%20much%20time%20it%20takes%20to%20deliver%3F`, '_blank');
+                    }
+                }
+              }}
+            />
+            <button 
+              className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded uppercase whitespace-nowrap"
+              onClick={() => {
+                  const orderNum = mainTrackInputRef.current?.value;
+                  if (orderNum) {
+                      window.open(`https://wa.me/03705965670?text=My%20order%20number%20is%20${orderNum}.%20Can%20I%20get%20how%20much%20time%20it%20takes%20to%20deliver%3F`, '_blank');
+                  }
+              }}
+            >
+              Track Order
+            </button>
+        </div>
+      </section>
       <ScrollVelocity
         texts={['BANG BANG HOTPOT', 'FRESH INGREDIENTS', 'AUTHENTIC TASTE']}
         velocity={100}
@@ -458,7 +497,12 @@ export default function App() {
                 <form 
                   onSubmit={async (e) => {
                     e.preventDefault();
+                    console.log("Form submitted");
+                    const orderNum = Math.floor(100000 + Math.random() * 900000).toString();
+                    setCheckoutOrderNumber(orderNum);
+                    
                     const formData = new FormData(e.currentTarget);
+                    formData.append("order_number", orderNum);
                     formData.append("order_details", JSON.stringify(order.map(item => ({ name: item.name, price: item.price, quantity: item.quantity }))));
 
                     try {
@@ -466,13 +510,16 @@ export default function App() {
                             method: "POST",
                             body: formData,
                         });
+                        console.log("Response:", response);
                         
                         if (response.ok) {
+                            console.log("Setting isOrderPlaced true");
                             setIsOrderPlaced(true);
                         } else {
                             throw new Error("Form submission failed");
                         }
                     } catch (error) {
+                        console.error("Submission error:", error);
                         alert("Something went wrong. Please try again.");
                     }
                   }}
@@ -507,7 +554,7 @@ export default function App() {
                   </div>
 
                   <button type="submit" className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded mt-8 mb-4 w-full uppercase">Complete Order</button>
-                  <a href="https://wa.me/YOUR_PHONE_NUMBER_HERE" target="_blank" rel="noopener noreferrer" className="block text-center bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded mb-4 w-full uppercase">Contact Customer Service</a>
+                  <a href="https://wa.me/03705965670" target="_blank" rel="noopener noreferrer" className="block text-center bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-8 rounded mb-4 w-full uppercase">Contact Customer Service</a>
                   <button type="button" className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-8 rounded mb-4 w-full uppercase" onClick={clearOrder}>Clear Order</button>
                 </form>
 
@@ -526,7 +573,7 @@ export default function App() {
                                         <p className="font-bold">{item.name}</p>
                                         <p className="text-sm text-gray-400">{item.quantity} x {item.price.replace('$', 'Rs ')}</p>
                                     </div>
-                                    <button onClick={() => updateOrder({name: item.name, price: item.price, image: item.image}, -item.quantity)} className="ml-auto text-red-500 font-bold px-2">Delete</button>
+                                    <button onClick={() => updateOrder(item, -item.quantity)} className="ml-auto text-red-500 font-bold px-2">Delete</button>
                                 </div>
                             ))}
                         </div>
@@ -543,8 +590,60 @@ export default function App() {
             ) : (
               <div className="w-full text-center py-12">
                 <h2 className="text-4xl font-bold mb-8 uppercase font-display text-green-500">Order Confirmed!</h2>
+                {checkoutOrderNumber && (
+                    <p className="mb-4 text-xl text-white inline-flex items-center gap-2">
+                        Your order#<span className="font-bold text-red-400">{checkoutOrderNumber}</span>
+                        <button 
+                            className="text-gray-400 hover:text-white"
+                            onClick={() => {
+                                navigator.clipboard.writeText(checkoutOrderNumber);
+                            }}
+                        >
+                            <Copy size={16} />
+                        </button>
+                        <button 
+                            className="text-gray-400 hover:text-white"
+                            onClick={() => {
+                                window.open(`https://wa.me/03705965670?text=My%20order%20number%20is%20${checkoutOrderNumber}.%20Can%20I%20get%20how%20much%20time%20it%20takes%20to%20deliver%3F`, '_blank');
+                            }}
+                        >
+                            <Map size={16} />
+                        </button>
+                    </p>
+                )}
                 <p className="mb-8 text-2xl text-white">Thank you for ordering from the Bang Bang Hotpot!</p>
-                <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded uppercase" onClick={() => { setIsCheckingOut(false); clearOrder(); }}>Close</button>
+                <button className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded uppercase mb-8" onClick={() => { setIsCheckingOut(false); clearOrder(); }}>Close</button>
+                
+                <div className="mt-8 border-t border-gray-700 pt-8">
+                  <h3 className="text-xl font-bold mb-4 uppercase font-display text-red-600">Track Another Order</h3>
+                  <div className="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto">
+                    <input
+                      type="text"
+                      placeholder="Enter Order Number"
+                      className="p-4 bg-black rounded text-center text-white border border-gray-600 focus:border-red-500 outline-none w-full"
+                      ref={confirmTrackInputRef}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const orderNum = confirmTrackInputRef.current?.value;
+                          if (orderNum) {
+                            window.open(`https://wa.me/03705965670?text=My%20order%20number%20is%20${orderNum}.%20Can%20I%20get%20how%20much%20time%20it%20takes%20to%20deliver%3F`, '_blank');
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      className="bg-red-600 hover:bg-red-500 text-white font-bold py-4 px-8 rounded uppercase whitespace-nowrap"
+                      onClick={() => {
+                        const orderNum = confirmTrackInputRef.current?.value;
+                        if (orderNum) {
+                          window.open(`https://wa.me/03705965670?text=My%20order%20number%20is%20${orderNum}.%20Can%20I%20get%20how%20much%20time%20it%20takes%20to%20deliver%3F`, '_blank');
+                        }
+                      }}
+                    >
+                      Track Order
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -561,7 +660,7 @@ export default function App() {
   );
 }
 
-const VegetableSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: number) => void, itemClass: string }) => {
+const VegetableSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (item: CartItem, delta: number) => void, itemClass: string }) => {
   const vegetables = [
     { name: "BROCCOLI", price: "RS 300", description: "Fresh green broccoli.", image: "https://i.pinimg.com/736x/f6/87/5d/f6875d90a4c55fc6eda0f9498f4987c8.jpg" },
     { name: "CORN", price: "RS 500", description: "Sweet golden corn.", image: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=300&auto=format&fit=crop" },
@@ -601,7 +700,6 @@ const VegetableSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta:
               <p className="text-sm text-gray-400 mb-2">{veg.description}</p>
               <div className="flex gap-2">
                 <QuantityControl item={{ name: veg.name, price: veg.price, image: veg.image }} onUpdate={onUpdateOrder} />
-                <button onClick={() => setActiveReviewItem(veg.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
           </motion.div>
@@ -611,7 +709,7 @@ const VegetableSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta:
   );
 };
 
-const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: number) => void, itemClass: string }) => {
+const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (item: CartItem, delta: number) => void, itemClass: string }) => {
   const meats = [
     { name: "BEEF SLIDERS", price: "RS 600", description: "Juicy beef patties in mini buns.", image: "https://i.ibb.co/HT3Zj8mt/A-chopsticks-holding-sliced-beef-vector-image-on-Vector-Stock-removebg-preview.png" },
     { name: "CHICKEN DUMPLINGS", price: "RS 400", description: "Soft dumplings filled with spiced chicken.", image: "https://i.ibb.co/VYWr1bdg/Ground-Beef-and-Dumplings-That-Will-Warm-Your-Soul-removebg-preview.png" },
@@ -645,7 +743,6 @@ const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: numb
               <p className="text-sm text-gray-400 mb-2">{meat.description}</p>
               <div className="flex gap-2">
                 <QuantityControl item={{ name: meat.name, price: meat.price, image: meat.image }} onUpdate={onUpdateOrder} />
-                <button onClick={() => setActiveReviewItem(meat.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
           </motion.div>
@@ -655,7 +752,7 @@ const MeatSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: numb
   );
 };
 
-const SeafoodSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: number) => void, itemClass: string }) => {
+const SeafoodSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (item: CartItem, delta: number) => void, itemClass: string }) => {
   const seafoodAndSidelines = [
     { title: "SEAFOOD", subtitle: "海鲜", color: "pink-500", items: [
       { name: "SHRIMP", price: "RS 999", description: "Fresh, succulent tiger prawns.", image: "https://i.ibb.co/9k7Zthd9/Schnucks-31-40-Cooked-Tail-Off-Shrimp-16-Oz-removebg-preview.png" },
@@ -694,7 +791,6 @@ const SeafoodSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
                   <p className="text-sm text-gray-400 mb-2">{item.description}</p>
                   <div className="flex gap-2">
                     <QuantityControl item={{ name: item.name, price: item.price, image: item.image }} onUpdate={onUpdateOrder} />
-                    <button onClick={() => setActiveReviewItem(item.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
                   </div>
                 </div>
               </motion.div>
@@ -706,7 +802,7 @@ const SeafoodSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
   );
 };
 
-const NoodlesSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: number) => void, itemClass: string }) => {
+const NoodlesSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (item: CartItem, delta: number) => void, itemClass: string }) => {
   const noodles = [
     { name: "CHINESE NOODLES", price: "RS 300", description: "Authentic handmade wheat noodles.", image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?q=80&w=300&auto=format&fit=crop" },
     { name: "EGG NOODLES", price: "RS 300", description: "Rich and silky egg-based noodles.", image: "https://i.ibb.co/84K1S7J8/images-removebg-preview.png" },
@@ -737,7 +833,6 @@ const NoodlesSection = ({ onUpdateOrder, itemClass }: { onUpdateOrder: (delta: n
               <p className="text-sm text-gray-400 mb-2">{noodle.description}</p>
               <div className="flex gap-2">
                 <QuantityControl item={{ name: noodle.name, price: noodle.price, image: noodle.image }} onUpdate={onUpdateOrder} />
-                <button onClick={() => setActiveReviewItem(noodle.name)} className="px-4 py-2 mt-2 bg-gray-700 text-white rounded">Reviews</button>
               </div>
             </div>
           </motion.div>
