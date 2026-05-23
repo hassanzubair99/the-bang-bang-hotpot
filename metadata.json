@@ -1,6 +1,6 @@
 {
   "name": "Bang Bang Hotpot",
   "description": "Hero section for The Bang Bang Hotpot restaurant.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["geolocation"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

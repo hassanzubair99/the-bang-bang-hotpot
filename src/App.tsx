@@ -535,9 +535,8 @@ export default function App() {
                   <div className="space-y-4">
                     <input type="text" name="name" placeholder="Customer Name" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
                     <input type="email" name="email" placeholder="Email" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
-                    <input type="tel" name="phone_number" placeholder="Phone Number" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
-                    <input type="text" name="postal_code" placeholder="Postal Code" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
-                    <input type="text" name="address" placeholder="Delivery Address" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+                    <input type="tel" name="phone_number" placeholder="+92" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" />
+                    <textarea name="address" placeholder="Delivery Address" required className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" rows={3}></textarea>
                     
                     <textarea name="message" placeholder="Notes" className="w-full p-4 bg-black rounded text-white border border-gray-600 focus:border-red-500 outline-none" rows={3}></textarea>
                     
@@ -582,6 +581,7 @@ export default function App() {
                                 <span>Total Price:</span>
                                 <span>Rs {order.reduce((sum, item) => sum + parseInt(item.price.replace(/\D/g, '')) * item.quantity, 0)}</span>
                             </p>
+                            {/* CheckoutMap removed as requested */}
                         </div>
                       </>
                   )}
